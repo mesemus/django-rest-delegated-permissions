@@ -1,5 +1,5 @@
 import os
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SECRET_KEY = 'm&e)67jpn8h_m8e=bksh4q4!^9@4p%37lu0269=#kr=#%!8pgk'
 DEBUG = True
 
@@ -26,7 +26,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'tests.urls'
+ROOT_URLCONF = 'tests.app.urls'
 
 TEMPLATES = [
     {
@@ -44,7 +44,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'tests.wsgi.application'
+WSGI_APPLICATION = 'tests.app.wsgi.application'
 
 DATABASES = {
     'default': {

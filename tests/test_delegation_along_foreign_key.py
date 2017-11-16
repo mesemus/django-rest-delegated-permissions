@@ -5,7 +5,7 @@ import pytest
 from django.contrib.auth.models import User, Permission, AnonymousUser
 from guardian.shortcuts import assign_perm
 
-from .models import Container, ItemA
+from tests.app.models import Container, ItemA
 
 
 @pytest.mark.django_db(transaction=True)
