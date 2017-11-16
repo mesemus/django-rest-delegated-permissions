@@ -34,7 +34,8 @@ class TestDelegationAlongForeignKey:
                     container_url, item_url,
                     user, access_test_result_code):
 
-        client.force_login(user)
+        if not user.is_anonymous():
+            client.force_login(user)
 
         resp = client.get(container_url)
         assert resp.status_code == access_test_result_code
@@ -68,7 +69,8 @@ class TestDelegationAlongForeignKey:
                     container_url, item_url,
                     user, modify_test_result_code):
 
-        client.force_login(user)
+        if not user.is_anonymous():
+            client.force_login(user)
 
         resp = client.patch(container_url, json.dumps({}), content_type='application/json')
         assert resp.status_code == modify_test_result_code['container']

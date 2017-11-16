@@ -1,14 +1,14 @@
 import inspect
 import operator
 
+from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Exists, OuterRef, Value, ExpressionWrapper, BooleanField
+from django.db.models.query import EmptyQuerySet
 from guardian.shortcuts import get_objects_for_user
 from rest_condition import Condition
 from rest_framework import permissions
 import logging
-
-from rest_framework.permissions import DjangoModelPermissions
 
 log = logging.getLogger(__file__)
 
@@ -95,16 +95,20 @@ class DjangoCombinedPermission:
             'partial_update': 'change'
         }[action]
         ct = ContentType.objects.get_for_model(qs.model)
-        perm = '%s.%s_%s' % (ct.app_label, operation, ct.model)
-        if user.has_perm(perm):
-            yield qs.annotate(__ex=ExpressionWrapper(Value(True), output_field=BooleanField()))
-        else:
-            # add queryset for guardian
-            guardian_qs = get_objects_for_user(user, [perm], qs) \
-                .annotate(__ex=ExpressionWrapper(Value(True), output_field=BooleanField()))
-            yield guardian_qs
+        perm = '%s_%s' % (operation, ct.model)
 
+        if DjangoCombinedPermission.check_permission_exists(ct, perm):
+            if user.has_perm(perm):
+                yield qs.annotate(__ex=ExpressionWrapper(Value(True), output_field=BooleanField()))
+            else:
+                # add queryset for guardian
+                guardian_qs = get_objects_for_user(user, [perm], qs) \
+                    .annotate(__ex=ExpressionWrapper(Value(True), output_field=BooleanField()))
+                yield guardian_qs
 
+    @staticmethod
+    def check_permission_exists(ct, perm_name):
+        return Permission.objects.filter(content_type=ct, codename=perm_name).exists()
 
 
 class RestPermissions:
@@ -220,7 +224,9 @@ class RestPermissions:
             for partial_qs in self.filtered_model_queryset(model_class, qs, user, action):
                 querysets.extend(partial_qs)
 
-            return querysets[0].union(*querysets[1:])
+            if querysets:
+                return querysets[0].union(*querysets[1:])
+            return model_class.objects.none()
 
         return model_filter
 
