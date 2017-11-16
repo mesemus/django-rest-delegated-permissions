@@ -23,9 +23,7 @@ Steps to reproduce this bug.
 
 
 ### Observed behavior
-```
-<!-- What went wrong -->
-```
+<!-- Describe what went wrong, add stack traces, screenshots, ... -->
 
 ### Desired behavior
 <!--What is the expected behaviour? Use cases? -->
