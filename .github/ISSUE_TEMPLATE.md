@@ -1,12 +1,12 @@
 <!--
-Please provide the needed information.
+  Please provide the needed information below
 -->
 
 ### Versions
-```
 <!--
   Fill in version of the following packages or provide the output of pip freeze.
 -->
+```
   Django              :
   djangorestframework :
   django-guardian     :
