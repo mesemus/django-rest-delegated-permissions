@@ -16,10 +16,16 @@ setup(
     license='MIT',
     install_requires=[
         'Django>=1.10',
+        'djangorestframework',
+        'rest_condition',
+        'django-guardian',
+        'pytest-runner',
+        'pytest-env'
     ],
     tests_require=[
         'tox',
         'pytest',
-        'pytest-django'
+        'pytest-django',
+        'pytest_matrix'
     ]
 )
