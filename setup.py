@@ -1,8 +1,12 @@
 import os
 from setuptools import setup
 
-here = os.path.abspath(os.path.dirname(__file__))
-README = open(os.path.join(here, 'README.md')).read()
+# here = os.path.abspath(os.path.dirname(__file__))
+# README = open(os.path.join(here, 'README.md')).read()
+
+README="""
+/home/simeki/w/github/django-rest-delegated-permissions/setup.py
+"""
 
 setup(
     name='django-rest-delegated-permissions',
