@@ -1,5 +1,6 @@
 import functools
 import inspect
+import logging
 import operator
 
 from django.contrib.auth.models import Permission
@@ -9,63 +10,49 @@ from django.db.models.query import EmptyQuerySet
 from guardian.shortcuts import get_objects_for_user
 from rest_condition import Condition
 from rest_framework import permissions
-import logging
 
 log = logging.getLogger(__file__)
 
 
-def get_delegated_objects(obj, field_names):
-    for perm_field_name in field_names:
-        perm_field = obj._meta.get_field(perm_field_name)
-        delegated_objects = []
-        if perm_field.one_to_many or perm_field.many_to_many:
-            delegated_objects = getattr(obj, perm_field_name).all()
-        elif hasattr(obj, '%s_id' % perm_field_name) and getattr(obj, '%s_id' % perm_field_name):
-            delegated_objects = [getattr(obj, perm_field_name)]
-        for delegated_obj in delegated_objects:
-            yield delegated_obj
-
-
-class OwnerPermission():
-    def __init__(self, owner_username_path):
-        self.owner_username_path = owner_username_path
-
-    def has_object_permission(self, request, view, obj):
-        return type(obj).objects.filter(**{self.owner_username_path: request.user.username}, pk=obj.pk).exists()
-
-    def get_queryset_filters(self, rest_permissions, qs, user, action):
-        yield qs.filter(**{self.owner_username_path: user.username}) \
-            .annotate(__ex=ExpressionWrapper(Value(True), output_field=BooleanField()))
-
-
-class DelegatedView:
-    def __init__(self, rest_permissions, model_class, request, action):
-        self.request = request
-        self.action = action
-        self.rest_permissions = rest_permissions
-        self.model_class = model_class
-
-    def get_queryset(self):
-        return self.rest_permissions.create_queryset_factory(self.model_class)(self.request.user, self.action)
-
-
 class DelegatedPermission(permissions.BasePermission):
+
+    class DelegatedView:
+        def __init__(self, rest_permissions, model_class, request, action):
+            self.request = request
+            self.action = action
+            self.rest_permissions = rest_permissions
+            self.model_class = model_class
+
+        def get_queryset(self):
+            return self.rest_permissions.create_queryset_factory(self.model_class)(self.request.user, self.action)
 
     def __init__(self, rest_permissions, *delegated_fields):
         self.rest_permissions = rest_permissions
         self.delegated_fields = delegated_fields
 
     def has_object_permission(self, request, view, obj):
-        for delegated_obj in get_delegated_objects(obj, self.delegated_fields):
+        for delegated_obj in DelegatedPermission.get_delegated_objects(obj, self.delegated_fields):
             if not delegated_obj:
                 continue
             delegated_permissions = self.rest_permissions.permissions_for_model(delegated_obj)
-            delegated_view = DelegatedView(self.rest_permissions, type(delegated_obj), request, view.action)
+            delegated_view = DelegatedPermission.DelegatedView(self.rest_permissions, type(delegated_obj), request, view.action)
 
             if delegated_permissions.has_object_permission(request, delegated_view, delegated_obj):
                 return True
 
         return False
+
+    @staticmethod
+    def get_delegated_objects(obj, field_names):
+        for perm_field_name in field_names:
+            perm_field = obj._meta.get_field(perm_field_name)
+            delegated_objects = []
+            if perm_field.one_to_many or perm_field.many_to_many:
+                delegated_objects = getattr(obj, perm_field_name).all()
+            elif hasattr(obj, '%s_id' % perm_field_name) and getattr(obj, '%s_id' % perm_field_name):
+                delegated_objects = [getattr(obj, perm_field_name)]
+            for delegated_obj in delegated_objects:
+                yield delegated_obj
 
     def get_queryset_filters(self, rest_permissions, qs, user, action):
         for delegated_field_name in self.delegated_fields:
@@ -78,10 +65,33 @@ class DelegatedPermission(permissions.BasePermission):
             yield filtered_qs
 
 
+class RestrictedViewDjangoModelPermissions(permissions.DjangoModelPermissions):
+    perms_map = {}
+    perms_map.update(permissions.DjangoModelPermissions.perms_map)
+    perms_map['GET'] = ['%(app_label)s.view_%(model_name)s']
+    perms_map['OPTIONS'] = ['%(app_label)s.view_%(model_name)s']
+    perms_map['HEAD'] = ['%(app_label)s.view_%(model_name)s']
+
+
+class RestrictedViewDjangoObjectPermissions(permissions.DjangoObjectPermissions):
+    perms_map = {}
+    perms_map.update(permissions.DjangoModelPermissions.perms_map)
+    perms_map['GET'] = ['%(app_label)s.view_%(model_name)s']
+    perms_map['OPTIONS'] = ['%(app_label)s.view_%(model_name)s']
+    perms_map['HEAD'] = ['%(app_label)s.view_%(model_name)s']
+
+    def has_object_permission(self, request, view, obj):
+        queryset = self._queryset(view)
+        model_cls = queryset.model
+        user = request.user
+        perms = self.get_required_object_permissions(request.method, model_cls)
+        return user.has_perms(perms, obj)
+
+
 class DjangoCombinedPermission:
     def __init__(self):
-        self.model_permissions  = permissions.DjangoModelPermissions()
-        self.object_permissions = permissions.DjangoObjectPermissions()
+        self.model_permissions  = RestrictedViewDjangoModelPermissions()
+        self.object_permissions = RestrictedViewDjangoObjectPermissions()
 
     def has_object_permission(self, request, view, obj):
         return self.model_permissions.has_permission(request, view) or \
@@ -179,7 +189,6 @@ class RestPermissions:
             yield perm.get_queryset_filters(self, root_queryset, user, action)
 
     def permissions_for_model(self, model_class_or_model):
-        print("permissions for model called")
         if inspect.isclass(model_class_or_model):
             model_class = model_class_or_model
         else:
@@ -192,21 +201,11 @@ class RestPermissions:
         """
 
         def decorate(viewset_class):
-            model_class = getattr(viewset_class, 'model', getattr(viewset_class, 'queryset').model)
+            model_class = getattr(viewset_class, 'model', None)
+            if not model_class:
+                model_class = getattr(viewset_class, 'queryset').model
 
-            condition = self.model_permission_map[model_class]
-
-            class Permission(permissions.BasePermission):
-                def has_object_permission(self, request, view, obj):
-                    return condition.has_object_permission(request, view, obj)
-
-                def has_permission(self, request, view):
-                    # everyone is allowed as the query set is filtered (for read) and
-                    # has_object_permission is applied for update/delete
-                    # create must be handled separately
-                    return True
-
-            viewset_class.permission_classes = (Permission,)
+            viewset_class.permission_classes = (self.get_model_permissions(model_class),)
 
             model_queryset_factory = self.create_queryset_factory(model_class)
 
@@ -220,6 +219,21 @@ class RestPermissions:
             return viewset_class
 
         return decorate
+
+    def get_model_permissions(self, model_class):
+        condition = self.model_permission_map[model_class]
+
+        class _Permission(permissions.BasePermission):
+            def has_object_permission(self, request, view, obj):
+                return condition.has_object_permission(request, view, obj)
+
+            def has_permission(self, request, view):
+                # everyone is allowed as the query set is filtered (for read) and
+                # has_object_permission is applied for update/delete
+                # create must be handled separately
+                return True
+
+        return _Permission
 
     def create_queryset_factory(self, model_class):
         """

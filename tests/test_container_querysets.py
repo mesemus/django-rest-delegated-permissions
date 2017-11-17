@@ -9,7 +9,7 @@ from .app.viewsets import perms
 
 
 @pytest.mark.django_db(transaction=True)
-class TestQuerySets:
+class TestContainerQuerySets:
 
     # region Common
 

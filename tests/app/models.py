@@ -8,7 +8,7 @@ from django.db import models
 
 class Container(models.Model):
     name    = models.CharField(max_length=10)
-    item_c  = models.ForeignKey('ItemC', null=True, blank=True)
+    item_c  = models.ForeignKey('ItemC', null=True, blank=True, related_name='container')
     items_d = models.ManyToManyField('ItemD', related_name='containers')
 
     class Meta:
