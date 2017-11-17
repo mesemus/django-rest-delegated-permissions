@@ -10,6 +10,10 @@ from tests.app.models import Container, ItemA
 
 @pytest.mark.django_db(transaction=True)
 class TestDelegationAlongForeignKey:
+
+    # region Common
+
+    # noinspection PyAttributeOutsideInit
     @pytest.fixture(autouse=True)
     def environ(self):
         self.container = Container.objects.create(name='container')
@@ -18,9 +22,9 @@ class TestDelegationAlongForeignKey:
         self.view_permission = Permission.objects.get(codename='view_container')
         self.change_permission = Permission.objects.get(codename='change_container')
 
-    #
-    # Test reading
-    #
+    # endregion
+
+    # region Test reading
 
     @pytest.mark.matrix(
         names=['user'],
@@ -53,9 +57,9 @@ class TestDelegationAlongForeignKey:
                              'allowed_readwrite_user'):
             return 200
 
-    #
-    # Test modification
-    #
+    # endregion
+
+    # region Test modification
 
     @pytest.mark.matrix(
         names=['user'],
@@ -87,9 +91,9 @@ class TestDelegationAlongForeignKey:
         if user.username in ('allowed_guardian_user', 'allowed_readwrite_user'):
             return {'container': 405, 'item': 200}
 
-    #
-    # Users
-    #
+    # endregion
+
+    # region Users
 
     @pytest.fixture()
     def user_allowed_read_user(self):
@@ -125,9 +129,10 @@ class TestDelegationAlongForeignKey:
         user.user_permissions.add(self.change_permission)
         return user
 
-    #
-    # Resources
-    #
+    # endregion
+
+    # region Resources
+
     @pytest.fixture()
     def container_url(self):
         return '/container/%s/' % self.container.id
@@ -135,3 +140,5 @@ class TestDelegationAlongForeignKey:
     @pytest.fixture()
     def item_url(self):
         return '/item/A/%s/' % self.item
+
+    # endregion

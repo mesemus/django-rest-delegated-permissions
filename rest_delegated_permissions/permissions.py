@@ -1,3 +1,4 @@
+import functools
 import inspect
 import operator
 
@@ -72,8 +73,9 @@ class DelegatedPermission(permissions.BasePermission):
             related_model = fld.related_model
             related_model_qs = rest_permissions.create_queryset_factory(related_model)(user, action)
 
-            yield qs.annotate(__ex=Exists(related_model_qs.filter(pk=OuterRef(delegated_field_name)))) \
-                .filter(__ex=True)
+            filtered_qs = \
+                qs.annotate(__ex=Exists(related_model_qs.filter(pk=OuterRef(delegated_field_name)))).filter(__ex=True)
+            yield filtered_qs
 
 
 class DjangoCombinedPermission:
@@ -157,11 +159,18 @@ class RestPermissions:
                 # return intersection of unions
                 intersection_querysets = []
                 for subperm in perm.perms_or_conds:
-                    subperm_querysets = list(self._permission_to_queryset(subperm, root_queryset, user, action))
+                    subperm_querysets = [
+                        x for x in self._permission_to_queryset(subperm, root_queryset, user, action)
+                        if not isinstance(x, EmptyQuerySet)
+                    ]
                     if subperm_querysets:
-                        intersection_querysets.append(subperm_querysets[0].union(*subperm_querysets[1:]))
+                        intersection_querysets.append(functools.reduce(operator.or_, subperm_querysets))
+                    else:
+                        # no queryset returned => the result is False
+                        intersection_querysets = None
+                        break
                 if intersection_querysets:
-                    yield intersection_querysets[0].intersection(*intersection_querysets[1:])
+                    yield functools.reduce(operator.and_, intersection_querysets)
             else:
                 log.error('Subconditions are not implemented in .queryset(), expect narrower results')
         else:
@@ -223,9 +232,11 @@ class RestPermissions:
 
             for partial_qs in self.filtered_model_queryset(model_class, qs, user, action):
                 querysets.extend(partial_qs)
-
+            querysets = [
+                x for x in querysets if not isinstance(x, EmptyQuerySet)
+            ]
             if querysets:
-                return querysets[0].union(*querysets[1:])
+                return functools.reduce(operator.or_, querysets)
             return model_class.objects.none()
 
         return model_filter
