@@ -124,21 +124,6 @@ class TestContainerQuerySets:
     def guardian_write_false(self):
         return False
 
-    @pytest.fixture()
-    def guardian_item_read_true(self):
-        return True
-
-    @pytest.fixture()
-    def guardian_item_read_false(self):
-        return False
-
-    @pytest.fixture()
-    def guardian_item_write_true(self):
-        return True
-
-    @pytest.fixture()
-    def guardian_item_write_false(self):
-        return False
     # endregion
 
     # region Actions
@@ -152,6 +137,3 @@ class TestContainerQuerySets:
         return 'change'
 
     # endregion
-
-    def method_teardown(self):
-        pass

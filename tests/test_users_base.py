@@ -115,6 +115,3 @@ class BaseUsers:
         return 'change'
 
     # endregion
-
-    def method_teardown(self):
-        pass
