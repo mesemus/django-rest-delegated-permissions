@@ -131,11 +131,15 @@ class RestPermissions:
 
     def update_permissions(self, model_permission_map):
         for model_class, model_permissions in model_permission_map.items():
-            if not isinstance(model_permissions, list) and not isinstance(model_permissions, tuple):
-                model_permissions = [model_permissions]
             self.set_model_permissions(model_class, model_permissions)
 
-    def set_model_permissions(self, model_class, model_permissions):
+    def set_model_permissions(self, model_class, model_permissions, overwrite=False):
+        if model_class in self.model_permission_map and not overwrite:
+            raise AttributeError('Permissions for %s already registered' % model_class)
+
+        if not isinstance(model_permissions, list) and not isinstance(model_permissions, tuple):
+            model_permissions = [model_permissions]
+
         if self.add_django_permissions:
             perms = list(model_permissions)
             perms.insert(0, DjangoCombinedPermission())
@@ -195,15 +199,19 @@ class RestPermissions:
             model_class = type(model_class_or_model)
         return self.model_permission_map[model_class]
 
-    def apply(self):
+    def apply(self, permissions=None):
         """
         Sets premissions for a ViewSet class
+        :param permissions: If the permissions are set, they are registered upon class decoration
         """
 
         def decorate(viewset_class):
             model_class = getattr(viewset_class, 'model', None)
             if not model_class:
                 model_class = getattr(viewset_class, 'queryset').model
+
+            if permissions is not None:
+                self.set_model_permissions(model_class, permissions)
 
             viewset_class.permission_classes = (self.get_model_permissions(model_class),)
 

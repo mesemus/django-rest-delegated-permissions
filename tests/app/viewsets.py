@@ -8,6 +8,10 @@ from .models import Container, ItemA, ItemB, ItemC, ItemD
 # and support for django-guardian
 perms = RestPermissions()
 
+#
+# can set the permission either here or on a perms.apply() call - see itemB, C, D.
+# In that case it takes the model class from the queryset field defined on the viewset
+#
 perms.update_permissions({
     # User has permission to Container if he has guardian permissions or django model permissions
     Container: [],
@@ -15,22 +19,6 @@ perms.update_permissions({
     # User has permission to ItemA if he has guardian or django permissions to the instance or
     # if he has permission to Container pointed by "parent" field
     ItemA: DelegatedPermission(perms, 'parent'),
-
-    # User has permission to ItemB if he has guardian or django permissions to the instance or
-    # if he has permission to any of Containers pointed by "parents" m2m field
-    ItemB: DelegatedPermission(perms, 'parents'),
-
-    # User has permission to ItemC if he has guardian or django permissions to the instance or
-    # if he has permission to any of Containers that point to it via its item_c ForeignKey.
-    # Note: we are checking perms for ItemC and the Foreign Key is defined on Container,
-    # so we need to put in the related_name
-    ItemC: DelegatedPermission(perms, 'container'),
-
-    # User has permission to ItemD if he has guardian or django permissions to the instance or
-    # if he has permission to any of Containers that point to it via its items_d m2m field
-    # Note: we are checking perms for ItemD and the m2m field is defined on Container,
-    # so we need to put in the related_name
-    ItemD: DelegatedPermission(perms, 'containers'),
 })
 
 
@@ -70,7 +58,9 @@ class ItemBSerializer(ModelSerializer):
         exclude = ()
 
 
-@perms.apply()
+# User has permission to ItemB if he has guardian or django permissions to the instance or
+# if he has permission to any of Containers pointed by "parents" m2m field
+@perms.apply(permissions=DelegatedPermission(perms, 'parents'))
 class ItemBViewSet(viewsets.ModelViewSet):
     """
     This view set automatically provides `list` and `detail` actions.
@@ -84,8 +74,11 @@ class ItemCSerializer(ModelSerializer):
         model = ItemC
         exclude = ()
 
-
-@perms.apply()
+# User has permission to ItemC if he has guardian or django permissions to the instance or
+# if he has permission to any of Containers that point to it via its item_c ForeignKey.
+# Note: we are checking perms for ItemC and the Foreign Key is defined on Container,
+# so we need to put in the related_name
+@perms.apply(permissions=DelegatedPermission(perms, 'container'))
 class ItemCViewSet(viewsets.ModelViewSet):
     """
     This view set automatically provides `list` and `detail` actions.
@@ -100,7 +93,11 @@ class ItemDSerializer(ModelSerializer):
         exclude = ()
 
 
-@perms.apply()
+# User has permission to ItemD if he has guardian or django permissions to the instance or
+# if he has permission to any of Containers that point to it via its items_d m2m field
+# Note: we are checking perms for ItemD and the m2m field is defined on Container,
+# so we need to put in the related_name
+@perms.apply(permissions=DelegatedPermission(perms, 'containers'))
 class ItemDViewSet(viewsets.ModelViewSet):
     """
     This view set automatically provides `list` and `detail` actions.
