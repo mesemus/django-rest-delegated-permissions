@@ -8,7 +8,7 @@ from django.db import models
 
 class Container(models.Model):
     name    = models.CharField(max_length=10)
-    item_c  = models.ForeignKey('ItemC', null=True, blank=True, related_name='container')
+    item_c  = models.ForeignKey('ItemC', null=True, blank=True, related_name='container', on_delete=models.CASCADE)
     items_d = models.ManyToManyField('ItemD', related_name='containers')
 
     class Meta:
@@ -19,7 +19,7 @@ class Container(models.Model):
 
 class ItemA(models.Model):
     name   = models.CharField(max_length=10)
-    parent = models.ForeignKey(Container)
+    parent = models.ForeignKey(Container, on_delete=models.CASCADE)
 
     class Meta:
         permissions = (
