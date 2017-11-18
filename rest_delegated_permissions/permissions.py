@@ -250,7 +250,7 @@ class RestPermissions:
                 x for x in querysets if not isinstance(x, EmptyQuerySet)
             ]
             if querysets:
-                return functools.reduce(operator.or_, querysets)
+                return functools.reduce(operator.or_, querysets).distinct()
             return model_class.objects.none()
 
         return model_filter
