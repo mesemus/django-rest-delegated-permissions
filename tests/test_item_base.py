@@ -46,9 +46,6 @@ class BaseTestItemA:
     def item_class(self):
         return ItemA
 
-    def container_url(self, container):
-        return '/container/%s/' % container.id
-
     def item_url(self, item):
         return '/item/A/%s/' % item.id
 
@@ -96,9 +93,6 @@ class BaseTestItemB:
     def item_class(self):
         return ItemB
 
-    def container_url(self, container):
-        return '/container/%s/' % container.id
-
     def item_url(self, item):
         return '/item/B/%s/' % item.id
 
@@ -143,9 +137,6 @@ class BaseTestItemC:
     @pytest.fixture()
     def item_class(self):
         return ItemC
-
-    def container_url(self, container):
-        return '/container/%s/' % container.id
 
     def item_url(self, item):
         return '/item/C/%s/' % item.id
@@ -193,9 +184,6 @@ class BaseTestItemD(BaseTestItemQuerySets, BaseUsers):
     @pytest.fixture()
     def item_class(self):
         return ItemD
-
-    def container_url(self, container):
-        return '/container/%s/' % container.id
 
     def item_url(self, item):
         return '/item/D/%s/' % item.id

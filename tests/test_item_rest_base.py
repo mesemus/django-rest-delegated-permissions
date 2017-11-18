@@ -97,7 +97,4 @@ class BaseTestItemRest:
         except:
             pass
 
-        try:
-            return set(x.containers.all())
-        except:
-            pass
+        return set(x.containers.all())
