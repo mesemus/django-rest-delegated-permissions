@@ -1,7 +1,7 @@
 language: python
 python:
   - "3.5"
-  - "3.6"
+#  - "3.6"
 env:
   - DJANGO_VERSION=django111
   - DJANGO_VERSION=djangomaster
