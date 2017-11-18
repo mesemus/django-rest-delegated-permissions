@@ -213,18 +213,12 @@ class RestPermissions:
             if permissions is not None:
                 self.set_model_permissions(model_class, permissions)
 
-            viewset_class.permission_classes = (self.get_model_permissions(model_class),)
-
             model_queryset_factory = self.create_queryset_factory(model_class)
 
-            # set up queryset
-            def get_queryset(view_set):
-                # get queryset just for viewing
-                return model_queryset_factory(view_set.request.user, 'view')
-
-            viewset_class.get_queryset = get_queryset
-
-            return viewset_class
+            return type('%s_perms' % viewset_class.__name__, (viewset_class, ), {
+                'permission_classes': (self.get_model_permissions(model_class),),
+                'get_queryset': lambda view_set: model_queryset_factory(view_set.request.user, 'view')
+            })
 
         return decorate
 
