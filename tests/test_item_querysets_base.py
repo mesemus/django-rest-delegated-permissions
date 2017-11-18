@@ -39,6 +39,10 @@ class BaseTestItemQuerySets:
             print('{empty}')
         ids = set(qs.values_list('id', flat=True))
         expected_ids = set()
+
+        # guardian_write_true
+        # guardian_item_write_true
+
         if action == 'view':
             if read:
                 expected_ids.update(x.id for x in self.items)
@@ -58,6 +62,6 @@ class BaseTestItemQuerySets:
             if guardian_item_write:
                 expected_ids.update(x.id for x in self.guardian_directly_on_items)
 
-        assert ids == expected_ids
+        assert ids == expected_ids, ''
 
     # endregion

@@ -15,31 +15,32 @@ class BaseTestItemA:
     # noinspection PyAttributeOutsideInit
     @pytest.fixture(autouse=True)
     def environ(self):
-        self.containers = []
         self.items = []
         self.guardian_items = []
+        self.guardian_directly_on_items = []
+        self.containers = []
+        self.guardian_containers = []
 
-        for i in range(5):
-            container = Container.objects.create(name='container_%s' % i)
-            for j in range(2):
-                item = ItemA.objects.create(name='ItemA_%s_%s' % (i, j), parent=container)
-                self.items.append(item)
-                if i < 2:
-                    self.guardian_items.append(item)
-
+        for guardian_container in (0, 1):
+            container = Container.objects.create(name='container_%s' % guardian_container)
             self.containers.append(container)
-
-        self.guardian_containers = self.containers[:2]
+            if guardian_container:
+                self.guardian_containers.append(container)
+            for guardian_directly_on_item in (0, 1):
+                item = ItemA.objects.create(name='ItemA_%s_%s' %
+                                                 (guardian_container, guardian_directly_on_item),
+                                            parent=container)
+                self.items.append(item)
+                if guardian_container:
+                    self.guardian_items.append(item)
+                if guardian_directly_on_item:
+                    self.guardian_directly_on_items.append(item)
 
         self.view_permission = Permission.objects.get(codename='view_container')
         self.change_permission = Permission.objects.get(codename='change_container')
 
         self.view_item_permission = Permission.objects.get(codename='view_itema')
         self.change_item_permission = Permission.objects.get(codename='change_itema')
-
-        # take 1/4 of items in A for guardian on items
-        random.seed(0)
-        self.guardian_directly_on_items = random.sample(self.items, len(self.items)//4)
 
     @pytest.fixture()
     def item_class(self):
