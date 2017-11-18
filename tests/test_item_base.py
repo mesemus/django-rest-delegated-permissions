@@ -19,17 +19,17 @@ class BaseTestItemA:
         self.items = []
         self.guardian_items = []
 
-        for i in range(10):
+        for i in range(5):
             container = Container.objects.create(name='container_%s' % i)
             for j in range(2):
                 item = ItemA.objects.create(name='ItemA_%s_%s' % (i, j), parent=container)
                 self.items.append(item)
-                if i < 5:
+                if i < 2:
                     self.guardian_items.append(item)
 
             self.containers.append(container)
 
-        self.guardian_containers = self.containers[:5]
+        self.guardian_containers = self.containers[:2]
 
         self.view_permission = Permission.objects.get(codename='view_container')
         self.change_permission = Permission.objects.get(codename='change_container')
@@ -67,19 +67,19 @@ class BaseTestItemB:
 
         non_rights_container = Container.objects.create(name='non_rights')
 
-        for i in range(10):
+        for i in range(5):
             container = Container.objects.create(name='container_%s' % i)
             for j in range(2):
                 item = ItemB.objects.create(name='ItemB_%s_%s' % (i, j))
                 item.parents.add(container)
                 item.parents.add(non_rights_container)
                 self.items.append(item)
-                if i < 5:
+                if i < 2:
                     self.guardian_items.append(item)
 
             self.containers.append(container)
 
-        self.guardian_containers = self.containers[:5]
+        self.guardian_containers = self.containers[:2]
 
         self.view_permission = Permission.objects.get(codename='view_container')
         self.change_permission = Permission.objects.get(codename='change_container')
@@ -116,16 +116,16 @@ class BaseTestItemC:
 
         Container.objects.create(name='no_item_c')
 
-        for i in range(10):
+        for i in range(5):
             item = ItemC.objects.create(name='ItemC_%s' % (i,))
             container = Container.objects.create(name='container_%s' % i, item_c=item)
             self.items.append(item)
-            if i < 5:
+            if i < 2:
                 self.guardian_items.append(item)
 
             self.containers.append(container)
 
-        self.guardian_containers = self.containers[:5]
+        self.guardian_containers = self.containers[:2]
 
         self.view_permission = Permission.objects.get(codename='view_container')
         self.change_permission = Permission.objects.get(codename='change_container')
@@ -162,19 +162,19 @@ class BaseTestItemD(BaseTestItemQuerySets, BaseUsers):
 
         non_rights_container = Container.objects.create(name='non_rights')
 
-        for i in range(10):
+        for i in range(5):
             container = Container.objects.create(name='container_%s' % i)
             for j in range(2):
                 item = ItemD.objects.create(name='ItemD_%s_%s' % (i, j))
                 item.containers.add(container)
                 item.containers.add(non_rights_container)
                 self.items.append(item)
-                if i < 5:
+                if i < 2:
                     self.guardian_items.append(item)
 
             self.containers.append(container)
 
-        self.guardian_containers = self.containers[:5]
+        self.guardian_containers = self.containers[:2]
 
         self.view_permission = Permission.objects.get(codename='view_container')
         self.change_permission = Permission.objects.get(codename='change_container')
