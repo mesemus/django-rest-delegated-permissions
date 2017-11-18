@@ -54,7 +54,7 @@ class TestContainerRest:
         ])
     def test_container_rest(self, request, client, user, read, write, guardian_read, guardian_write, action):
 
-        if not user.is_anonymous():
+        if not user.is_anonymous:
             client.force_login(user)
 
         # guardian_read_true
