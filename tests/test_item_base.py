@@ -1,15 +1,14 @@
 import random
 
 import pytest
-from django.contrib.auth.models import Permission
+from django.contrib.auth.models import Permission, User
 
 from tests.test_users_base import BaseUsers
-from .app.models import Container, ItemA, ItemB, ItemC, ItemD
+from .app.models import Container, ItemA, ItemB, ItemC, ItemD, ItemE
 from .test_item_querysets_base import BaseTestItemQuerySets
 
 
 class BaseTestItemA:
-
     # region Common
 
     # noinspection PyAttributeOutsideInit
@@ -49,11 +48,10 @@ class BaseTestItemA:
     def item_url(self, item):
         return '/item/A/%s/' % item.id
 
-    # endregion
+        # endregion
 
 
 class BaseTestItemB:
-
     # region Common
 
     # noinspection PyAttributeOutsideInit
@@ -96,11 +94,10 @@ class BaseTestItemB:
     def item_url(self, item):
         return '/item/B/%s/' % item.id
 
-    # endregion
+        # endregion
 
 
 class BaseTestItemC:
-
     # region Common
 
     # noinspection PyAttributeOutsideInit
@@ -122,7 +119,6 @@ class BaseTestItemC:
                 self.guardian_items.append(item)
                 self.guardian_containers.append(container)
 
-
         self.view_permission = Permission.objects.get(codename='view_container')
         self.change_permission = Permission.objects.get(codename='change_container')
 
@@ -141,11 +137,10 @@ class BaseTestItemC:
     def item_url(self, item):
         return '/item/C/%s/' % item.id
 
-    # endregion
+        # endregion
 
 
 class BaseTestItemD:
-
     # region Common
 
     # noinspection PyAttributeOutsideInit
@@ -188,51 +183,60 @@ class BaseTestItemD:
     def item_url(self, item):
         return '/item/D/%s/' % item.id
 
-    # endregion
+        # endregion
 
 
-class BaseTestDenyAllItems:
-
+class BaseTestDenyAllItems(BaseTestItemA):
     # region Common
 
+    def item_url(self, item):
+        return '/item/deny/%s/' % item.id
+
+        # endregion
+
+
+class BaseTestAllowOnlyOwner:
     # noinspection PyAttributeOutsideInit
     @pytest.fixture(autouse=True)
     def environ(self):
-        non_rights_container = Container.objects.create(name='non_rights')
-
-        self.items = []
         self.guardian_items = []
         self.guardian_directly_on_items = []
         self.containers = []
         self.guardian_containers = []
 
-        for guardian_container in (0, 1):
-            container = Container.objects.create(name='container_%s' % guardian_container)
-            self.containers.append(container)
-            if guardian_container:
-                self.guardian_containers.append(container)
-            for guardian_directly_on_item in (0, 1):
-                item = ItemD.objects.create(name='ItemD_%s_%s' %
-                                                 (guardian_container, guardian_directly_on_item))
-                item.containers.add(container)
-                item.containers.add(non_rights_container)
-                self.items.append(item)
-                if guardian_container:
-                    self.guardian_items.append(item)
-                if guardian_directly_on_item:
-                    self.guardian_directly_on_items.append(item)
+        container = Container.objects.create(name='blah')
+        self.containers.append(container)               # make sure container gets all the permissions ...
+        self.guardian_containers.append(container)
+
+        it1 = ItemE.objects.create(name='allowed', parent=container, owner=User.objects.get_or_create(
+            username='a_%s_%s_%s_%s_%s_%s_%s_%s' % (
+                True, True, True, True,
+                True, True, True, True
+            ))[0])
+
+        it2 = ItemE.objects.create(name='allowed', parent=container, owner=User.objects.get_or_create(
+            username='a_%s_%s_%s_%s_%s_%s_%s_%s' % (
+                True, True, True, True,
+                True, True, True, False
+            ))[0])
+
+        it3 = ItemE.objects.create(name='allowed', parent=container, owner=User.objects.get_or_create(
+            username='not-tested')[0])
+
+        self.items = [it1, it2, it3]
+
+        self.guardian_directly_on_items.append(it3)
 
         self.view_permission = Permission.objects.get(codename='view_container')
         self.change_permission = Permission.objects.get(codename='change_container')
 
-        self.view_item_permission = Permission.objects.get(codename='view_itemd')
-        self.change_item_permission = Permission.objects.get(codename='change_itemd')
+        self.view_item_permission = Permission.objects.get(codename='view_iteme')
+        self.change_item_permission = Permission.objects.get(codename='change_iteme')
+
 
     @pytest.fixture()
     def item_class(self):
-        return ItemA
+        return ItemE
 
     def item_url(self, item):
-        return '/item/deny/%s/' % item.id
-
-    # endregion
+        return '/item/owner/%s/' % item.id

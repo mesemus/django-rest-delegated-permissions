@@ -10,10 +10,5 @@ from tests.test_users_base import BaseUsers
 @pytest.mark.django_db(transaction=True)
 class TestDenyRest(BaseTestDenyAllItems, BaseTestItemRest, BaseUsers):
 
-    def transform_expected_result_code(self, expected_result_code,
-                                       client, request, user, read, write,
-                                       guardian_read, guardian_write,
-                                       item_read, item_write, guardian_item_read,
-                                       guardian_item_write,
-                                       action, item_class):
+    def transform_expected_result_code(self, *args):
         return 404

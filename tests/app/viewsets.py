@@ -3,7 +3,7 @@ from rest_framework.serializers import ModelSerializer
 
 from rest_delegated_permissions import RestPermissions, DelegatedPermission
 from .permissions import OwnerPermission
-from .models import Container, ItemA, ItemB, ItemC, ItemD
+from .models import Container, ItemA, ItemB, ItemC, ItemD, ItemE
 
 # without parameters implicitly adds django model permissions (app_name.view_model, app_name.change_model)
 # and support for django-guardian
@@ -124,11 +124,18 @@ class DenyAllViewSet(viewsets.ModelViewSet):
 # different set of permissions
 perms2 = RestPermissions()
 
+
+class ItemESerializer(ModelSerializer):
+    class Meta:
+        model = ItemE
+        exclude = ()
+
+
 # allow only owner
 @perms2.apply(add_django_permissions=False, permissions=[OwnerPermission()])
 class AllowOnlyOwnerViewSet(viewsets.ModelViewSet):
     """
     This view set automatically provides `list` and `detail` actions.
     """
-    queryset = ItemA.objects.all()
-    serializer_class = ItemASerializer
+    queryset = ItemE.objects.all()
+    serializer_class = ItemESerializer

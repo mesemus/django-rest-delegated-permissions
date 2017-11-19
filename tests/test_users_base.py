@@ -16,7 +16,10 @@ class BaseUsers:
     @pytest.fixture()
     def user(self, read, write, guardian_read, guardian_write,
              item_read, item_write, guardian_item_read, guardian_item_write):
-        user = User.objects.create(username='a')
+        user,_ = User.objects.get_or_create(username='a_%s_%s_%s_%s_%s_%s_%s_%s' % (
+            read, write, guardian_read, guardian_write,
+            item_read, item_write, guardian_item_read, guardian_item_write
+        ))
         if read:
             user.user_permissions.add(self.view_permission)
         if write:

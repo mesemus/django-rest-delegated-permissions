@@ -31,7 +31,7 @@ class BaseTestItemQuerySets:
     def test_item_queryset(self, request, user, read, write, guardian_read, guardian_write,
                             item_read, item_write, guardian_item_read, guardian_item_write,
                             action, item_class):
-        qs = perms.create_queryset_factory(item_class)(user, action)
+        qs = self.get_perms().create_queryset_factory(item_class)(user, action)
         print("\nOutput from %s" % request.node.name)
         try:
             print(qs.query)
@@ -62,15 +62,14 @@ class BaseTestItemQuerySets:
             if guardian_item_write:
                 expected_ids.update(x.id for x in self.guardian_directly_on_items)
 
-        expected_ids = self.transform_expected_ids(expected_ids, request, user, read, write, guardian_read, guardian_write,
-                            item_read, item_write, guardian_item_read, guardian_item_write,
-                            action, item_class)
+        expected_ids = self.transform_expected_ids(expected_ids, request)
 
         assert ids == expected_ids, ''
 
-    def transform_expected_ids(self, expected_ids, request, user, read, write, guardian_read, guardian_write,
-                            item_read, item_write, guardian_item_read, guardian_item_write,
-                            action, item_class):
+    def get_perms(self):
+        return perms
+
+    def transform_expected_ids(self, expected_ids, request):
         return expected_ids
 
     # endregion
