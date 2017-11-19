@@ -144,7 +144,7 @@ class BaseTestItemC:
     # endregion
 
 
-class BaseTestItemD(BaseTestItemQuerySets, BaseUsers):
+class BaseTestItemD:
 
     # region Common
 
@@ -187,5 +187,52 @@ class BaseTestItemD(BaseTestItemQuerySets, BaseUsers):
 
     def item_url(self, item):
         return '/item/D/%s/' % item.id
+
+    # endregion
+
+
+class BaseTestDenyAllItems:
+
+    # region Common
+
+    # noinspection PyAttributeOutsideInit
+    @pytest.fixture(autouse=True)
+    def environ(self):
+        non_rights_container = Container.objects.create(name='non_rights')
+
+        self.items = []
+        self.guardian_items = []
+        self.guardian_directly_on_items = []
+        self.containers = []
+        self.guardian_containers = []
+
+        for guardian_container in (0, 1):
+            container = Container.objects.create(name='container_%s' % guardian_container)
+            self.containers.append(container)
+            if guardian_container:
+                self.guardian_containers.append(container)
+            for guardian_directly_on_item in (0, 1):
+                item = ItemD.objects.create(name='ItemD_%s_%s' %
+                                                 (guardian_container, guardian_directly_on_item))
+                item.containers.add(container)
+                item.containers.add(non_rights_container)
+                self.items.append(item)
+                if guardian_container:
+                    self.guardian_items.append(item)
+                if guardian_directly_on_item:
+                    self.guardian_directly_on_items.append(item)
+
+        self.view_permission = Permission.objects.get(codename='view_container')
+        self.change_permission = Permission.objects.get(codename='change_container')
+
+        self.view_item_permission = Permission.objects.get(codename='view_itemd')
+        self.change_item_permission = Permission.objects.get(codename='change_itemd')
+
+    @pytest.fixture()
+    def item_class(self):
+        return ItemA
+
+    def item_url(self, item):
+        return '/item/deny/%s/' % item.id
 
     # endregion

@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django.db import models
 
 
@@ -52,4 +53,15 @@ class ItemD(models.Model):
     class Meta:
         permissions = (
             ('view_itemd', 'View Item D'),
+        )
+
+
+class ItemE(models.Model):
+    name   = models.CharField(max_length=10)
+    parent = models.ForeignKey(Container, on_delete=models.CASCADE)
+    owner  = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+
+    class Meta:
+        permissions = (
+            ('view_iteme', 'View Item E'),
         )

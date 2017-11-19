@@ -133,14 +133,14 @@ class RestPermissions:
         for model_class, model_permissions in model_permission_map.items():
             self.set_model_permissions(model_class, model_permissions)
 
-    def set_model_permissions(self, model_class, model_permissions, overwrite=False):
+    def set_model_permissions(self, model_class, model_permissions, overwrite=False, force_add_django_permissions=None):
         if model_class in self.model_permission_map and not overwrite:
             raise AttributeError('Permissions for %s already registered' % model_class)
 
         if not isinstance(model_permissions, list) and not isinstance(model_permissions, tuple):
             model_permissions = [model_permissions]
 
-        if self.add_django_permissions:
+        if self.add_django_permissions and force_add_django_permissions is None or force_add_django_permissions:
             perms = list(model_permissions)
             perms.insert(0, DjangoCombinedPermission())
         else:
@@ -199,10 +199,12 @@ class RestPermissions:
             model_class = type(model_class_or_model)
         return self.model_permission_map[model_class]
 
-    def apply(self, permissions=None):
+    def apply(self, permissions=None, add_django_permissions=None):
         """
         Sets premissions for a ViewSet class
         :param permissions: If the permissions are set, they are registered upon class decoration
+        :param add_django_permissions: if None, use the default, otherwise overwrite the default.
+                                       Makes sense only if permissions parameter is filled as well
         """
 
         def decorate(viewset_class):
@@ -211,7 +213,8 @@ class RestPermissions:
                 model_class = getattr(viewset_class, 'queryset').model
 
             if permissions is not None:
-                self.set_model_permissions(model_class, permissions)
+                self.set_model_permissions(model_class, permissions,
+                                           force_add_django_permissions=add_django_permissions)
 
             model_queryset_factory = self.create_queryset_factory(model_class)
 

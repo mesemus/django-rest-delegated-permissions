@@ -62,6 +62,15 @@ class BaseTestItemQuerySets:
             if guardian_item_write:
                 expected_ids.update(x.id for x in self.guardian_directly_on_items)
 
+        expected_ids = self.transform_expected_ids(expected_ids, request, user, read, write, guardian_read, guardian_write,
+                            item_read, item_write, guardian_item_read, guardian_item_write,
+                            action, item_class)
+
         assert ids == expected_ids, ''
+
+    def transform_expected_ids(self, expected_ids, request, user, read, write, guardian_read, guardian_write,
+                            item_read, item_write, guardian_item_read, guardian_item_write,
+                            action, item_class):
+        return expected_ids
 
     # endregion

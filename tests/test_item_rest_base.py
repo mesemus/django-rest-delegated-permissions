@@ -67,7 +67,12 @@ class BaseTestItemRest:
             else:
                 raise NotImplementedError('Action %s is not implemented in test' % action)
 
-
+            expected_result_code = self.transform_expected_result_code(expected_result_code,
+                                                                       client, request, user, read, write,
+                                                                       guardian_read, guardian_write,
+                                                                       item_read, item_write, guardian_item_read,
+                                                                       guardian_item_write,
+                                                                       action, item_class)
 
             assert resp.status_code == expected_result_code, \
                 "The item had id %s, parents %s, the ids of guardian containers were %s, " \
@@ -78,8 +83,15 @@ class BaseTestItemRest:
                     [x.id for x in self.guardian_directly_on_items],
                 )
 
+    def transform_expected_result_code(self, expected_result_code,
+                                       client, request, user, read, write,
+                                       guardian_read, guardian_write,
+                                       item_read, item_write, guardian_item_read,
+                                       guardian_item_write,
+                                       action, item_class):
+        return expected_result_code
 
-# endregion
+    # endregion
 
     def get_parents(self, x):
         try:

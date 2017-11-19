@@ -79,6 +79,10 @@ class BaseTestItemPermission:
 
             is_allowed = perm_handler.has_object_permission(req, viewset, c)
 
+            should_be_allowed = \
+                self.transform_should_be_allowed(should_be_allowed, user, read, write, guardian_read, guardian_write,
+                             item_read, item_write, guardian_item_read, guardian_item_write, action, item_class)
+
             assert is_allowed == should_be_allowed, \
                    "The item had id %s, parents %s, the ids of guardian containers were %s, " \
                    "the ids of direct guardian items was %s" % (
@@ -87,6 +91,10 @@ class BaseTestItemPermission:
                        [x.id for x in self.guardian_containers],
                        [x.id for x in self.guardian_directly_on_items],
                    )
+
+    def transform_should_be_allowed(self, should_be_allowed, user, read, write, guardian_read, guardian_write,
+                             item_read, item_write, guardian_item_read, guardian_item_write, action, item_class):
+        return should_be_allowed
 
     # endregion
 
