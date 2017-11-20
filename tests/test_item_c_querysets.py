@@ -4,9 +4,10 @@ import pytest
 
 from tests.test_item_base import BaseTestItemC
 from tests.test_users_base import BaseUsers
-from .test_item_querysets_base import BaseTestItemQuerySets
+from .test_item_querysets_base import BaseTestItemQuerySets, SelectiveBaseTestItemQuerySets
 
 
 @pytest.mark.django_db(transaction=True)
-class TestItemCQuerySets(BaseTestItemC, BaseTestItemQuerySets, BaseUsers):
+# class TestItemCQuerySets(BaseTestItemC, BaseTestItemQuerySets, BaseUsers):
+class TestItemCQuerySets(BaseTestItemC, SelectiveBaseTestItemQuerySets, BaseUsers):
     pass

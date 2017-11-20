@@ -11,6 +11,8 @@ class Container(models.Model):
     name    = models.CharField(max_length=10)
     item_c  = models.ForeignKey('ItemC', null=True, blank=True, related_name='container', on_delete=models.CASCADE)
     items_d = models.ManyToManyField('ItemD', related_name='containers')
+    # owner for some of the tests
+    owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
 
     class Meta:
         permissions = (
