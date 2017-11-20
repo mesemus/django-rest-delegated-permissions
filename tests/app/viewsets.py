@@ -150,6 +150,7 @@ perms3 = RestPermissions(add_django_permissions=False,
                              # this is the same as Container: [OwnerPermission(), DjangoCombinedPermission()]
                          })
 
+
 @perms3.apply(permissions=DelegatedPermission(perms3, 'parent'))
 class DelegatedOwnerViewSet(viewsets.ModelViewSet):
     """
