@@ -16,24 +16,50 @@ log = logging.getLogger(__file__)
 
 
 class BasePermission(permissions.BasePermission):
+    """
+
+    A base class for all rest_delegated_permissions. Provides two methods:
+      * ``has_object_permission`` to decide if user has a permission on an object for the given request operation
+      * ``filter`` that filters the queryset so that user receives only those objects that he has the right to
+
+    Note: ``filter()`` method returns generator of querysets, not a single queryset!
+    """
 
     @abstractmethod
     def has_object_permission(self, request, view, obj):
-        #
-        # should return True if request.user has permission for object "obj".
-        # the view is a "View" instance that is used for retrieving/modifying the object
-        #
+        """
+        checks if the user permforming request has permission to make operation upon obj in the context of given view
+
+        :param request: REST request the user is performing. Use request.user to get the user, request.method for
+                        the method user wants to perform on the object
+        :param view:    Either the original ViewSet for the request or synthetic viewset for delegated permissions.
+        :param obj:     The object user wants to access
+        :return:        boolean value, True if user should be given the permission
+        """
         return False
 
     @abstractmethod
     def filter(self, rest_permissions, filtered_queryset, user, action):
-        #
-        # generator that yields one or more querysets. If it yields more than
-        # one queryset, they will be merged via "|" operator
-        #
+        """
+        returns a generator of querysets user has access to for the given operation
+
+        :param rest_permissions:        An instance of RestPermissions class, giving the "permission context" of the filter
+        :param filtered_queryset:       The original queryset of objects that is to be filtered
+        :param user:                    Django user performing the action
+        :param action:                  view, change, delete
+        :return:                        a generator (yield ...) returning one or more querysets. If more than one queryset
+                                        is returned, they are later combined via "|" operator
+        """
         yield filtered_queryset.model.objects.none()
 
     def get_queryset_filters(self, rest_permissions, qs, user, action):
+        """
+        a helper method to wrap the querysets returned by ``filter`` with a ``__extra_condition`` annotation, which
+        is required for the delegated permissions to work. The reason is that we use Exists subquery with ``OuterRef``
+        that needs to put the exists query into an annotation and later filter on that annotation. As we need to
+        have all the querysets returning the same columns (otherwise django silently ignores some of the querysets),
+        we need to wrap all the querysets with an extra ``__extra_condition`` annotation defaulting to ``True``.
+        """
         returns_extra_condition = getattr(self, 'returns__extra_condition', False)
         # because of filtering on delegated field which requires OuterRef we need to add
         # an extra annotation. If the implementor of the BasePermission does not supply
@@ -46,6 +72,9 @@ class BasePermission(permissions.BasePermission):
 
 
 class DelegatedPermission(permissions.BasePermission):
+    """
+
+    """
 
     class DelegatedView:
         def __init__(self, rest_permissions, model_class, request, action):

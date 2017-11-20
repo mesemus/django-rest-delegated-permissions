@@ -28,5 +28,10 @@ setup(
         'pytest',
         'pytest-django',
         'pytest_matrix'
-    ]
+    ],
+    extras_require={
+        'dev': [
+            'sphinx'
+        ]
+    }
 )
