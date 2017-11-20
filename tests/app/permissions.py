@@ -1,11 +1,14 @@
-class OwnerPermission:
+from rest_delegated_permissions.permissions import BasePermission
+
+
+class OwnerPermission(BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return obj.owner == request.user
 
-    def get_queryset_filters(self, rest_permissions, filtered_queryset, user, action):
+    def filter(self, rest_permissions, filtered_queryset, user, action):
         """
-        Must be a generator returning filters to be ORed
+        Must be a generator returning filters to be ORed later
 
         :param rest_permissions:    current RestPermissions instance
         :param filtered_queryset:   queryset to be filtered

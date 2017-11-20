@@ -1,11 +1,7 @@
-import random
-
 import pytest
 from django.contrib.auth.models import Permission, User
 
-from tests.test_users_base import BaseUsers
 from .app.models import Container, ItemA, ItemB, ItemC, ItemD, ItemE
-from .test_item_querysets_base import BaseTestItemQuerySets
 
 
 class BaseTestItemA:
@@ -240,3 +236,55 @@ class BaseTestAllowOnlyOwner:
 
     def item_url(self, item):
         return '/item/owner/%s/' % item.id
+
+
+class BaseTestDelegatedOwner:
+    # region Common
+
+    # noinspection PyAttributeOutsideInit
+    @pytest.fixture(autouse=True)
+    def environ(self):
+        self.guardian_items = []
+        self.guardian_directly_on_items = []
+        self.containers = []
+        self.guardian_containers = []
+
+        owner = User.objects.get_or_create(
+            username='a_%s_%s_%s_%s_%s_%s_%s_%s' % (
+                True, True, True, True,
+                True, True, True, True
+            ))[0]
+
+        container1 = Container.objects.create(name='withowner', owner=owner)
+        self.containers.append(container1)
+
+        container2 = Container.objects.create(name='aa')
+        self.containers.append(container2)
+
+        container3 = Container.objects.create(name='withdjango')
+        self.containers.append(container3)
+        self.guardian_containers.append(container3)
+
+        it1 = ItemA.objects.create(name='allowed_via_owner', parent=container1)
+
+        it2 = ItemA.objects.create(name='not_allowed', parent=container2)
+
+        it3 = ItemA.objects.create(name='allowed_via_django', parent=container3)
+
+        self.items = [it1, it2, it3]
+
+        self.view_permission = Permission.objects.get(codename='view_container')
+        self.change_permission = Permission.objects.get(codename='change_container')
+
+        self.view_item_permission = Permission.objects.get(codename='view_iteme')
+        self.change_item_permission = Permission.objects.get(codename='change_iteme')
+
+
+    @pytest.fixture()
+    def item_class(self):
+        return ItemA
+
+    def item_url(self, item):
+        return '/item/AOwner/%s/' % item.id
+
+        # endregion

@@ -2,6 +2,7 @@ from rest_framework import viewsets
 from rest_framework.serializers import ModelSerializer
 
 from rest_delegated_permissions import RestPermissions, DelegatedPermission
+from rest_delegated_permissions.permissions import DjangoCombinedPermission
 from .permissions import OwnerPermission
 from .models import Container, ItemA, ItemB, ItemC, ItemD, ItemE
 
@@ -75,6 +76,7 @@ class ItemCSerializer(ModelSerializer):
         model = ItemC
         exclude = ()
 
+
 # User has permission to ItemC if he has guardian or django permissions to the instance or
 # if he has permission to any of Containers that point to it via its item_c ForeignKey.
 # Note: we are checking perms for ItemC and the Foreign Key is defined on Container,
@@ -141,16 +143,15 @@ class AllowOnlyOwnerViewSet(viewsets.ModelViewSet):
     serializer_class = ItemESerializer
 
 
-perms3 = RestPermissions({
-    Container: OwnerPermission(),
-}, add_django_permissions=False)
+perms3 = RestPermissions(add_django_permissions=False,
+                         initial_permissions={
+                             Container: [OwnerPermission(), DjangoCombinedPermission()]
+                         })
 
-
-@perms3.apply(permissions=DelegatedPermission(perms, 'parent'))
+@perms3.apply(permissions=DelegatedPermission(perms3, 'parent'))
 class DelegatedOwnerViewSet(viewsets.ModelViewSet):
     """
     This view set automatically provides `list` and `detail` actions.
     """
     queryset = ItemA.objects.all()
     serializer_class = ItemASerializer
-

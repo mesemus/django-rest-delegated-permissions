@@ -2,6 +2,7 @@ import functools
 import inspect
 import logging
 import operator
+from abc import abstractmethod
 
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
@@ -12,6 +13,28 @@ from rest_condition import Condition
 from rest_framework import permissions
 
 log = logging.getLogger(__file__)
+
+
+class BasePermission(permissions.BasePermission):
+
+    @abstractmethod
+    def has_object_permission(self, request, view, obj):
+        return False
+
+    @abstractmethod
+    def filter(self, rest_permissions, filtered_queryset, user, action):
+        yield filtered_queryset.model.objects.none()
+
+    def get_queryset_filters(self, rest_permissions, qs, user, action):
+        returns_extra_condition = getattr(self, 'returns__extra_condition', False)
+        # because of filtering on delegated field which requires OuterRef we need to add
+        # an extra annotation. If the implementor of the BasePermission does not supply
+        # it, just add a True.
+        for qs in self.filter(rest_permissions, qs, user, action):
+            if returns_extra_condition:
+                yield qs
+            else:
+                yield qs.annotate(__extra_condition=ExpressionWrapper(Value(True), output_field=BooleanField()))
 
 
 class DelegatedPermission(permissions.BasePermission):
@@ -61,7 +84,7 @@ class DelegatedPermission(permissions.BasePermission):
             related_model_qs = rest_permissions.create_queryset_factory(related_model)(user, action)
 
             filtered_qs = \
-                qs.annotate(__ex=Exists(related_model_qs.filter(pk=OuterRef(delegated_field_name)))).filter(__ex=True)
+                qs.annotate(__extra_condition=Exists(related_model_qs.filter(pk=OuterRef(delegated_field_name)))).filter(__extra_condition=True)
             yield filtered_qs
 
 
@@ -89,6 +112,7 @@ class RestrictedViewDjangoObjectPermissions(permissions.DjangoObjectPermissions)
 
 
 class DjangoCombinedPermission:
+
     def __init__(self):
         self.model_permissions  = RestrictedViewDjangoModelPermissions()
         self.object_permissions = RestrictedViewDjangoObjectPermissions()
@@ -111,11 +135,11 @@ class DjangoCombinedPermission:
 
         if DjangoCombinedPermission.check_permission_exists(ct, perm):
             if user.has_perm(perm):
-                yield qs.annotate(__ex=ExpressionWrapper(Value(True), output_field=BooleanField()))
+                yield qs.annotate(__extra_condition=ExpressionWrapper(Value(True), output_field=BooleanField()))
             else:
                 # add queryset for guardian
                 guardian_qs = get_objects_for_user(user, [perm], qs) \
-                    .annotate(__ex=ExpressionWrapper(Value(True), output_field=BooleanField()))
+                    .annotate(__extra_condition=ExpressionWrapper(Value(True), output_field=BooleanField()))
                 yield guardian_qs
 
     @staticmethod
@@ -124,10 +148,14 @@ class DjangoCombinedPermission:
 
 
 class RestPermissions:
-    def __init__(self, default_queryset_factory=lambda model: model.objects.all(), add_django_permissions=True):
+    def __init__(self, default_queryset_factory=lambda model: model.objects.all(),
+                 initial_permissions=None,
+                 add_django_permissions=True):
         self.default_queryset_factory = default_queryset_factory
         self.add_django_permissions = add_django_permissions
         self.model_permission_map = {}
+        if initial_permissions:
+            self.update_permissions(initial_permissions)
 
     def update_permissions(self, model_permission_map):
         for model_class, model_permissions in model_permission_map.items():
