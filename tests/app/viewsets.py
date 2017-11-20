@@ -1,3 +1,4 @@
+from rest_condition import Condition
 from rest_framework import viewsets
 from rest_framework.serializers import ModelSerializer
 
@@ -145,7 +146,8 @@ class AllowOnlyOwnerViewSet(viewsets.ModelViewSet):
 
 perms3 = RestPermissions(add_django_permissions=False,
                          initial_permissions={
-                             Container: [OwnerPermission(), DjangoCombinedPermission()]
+                             Container: Condition.Or(OwnerPermission(), DjangoCombinedPermission())
+                             # this is the same as Container: [OwnerPermission(), DjangoCombinedPermission()]
                          })
 
 @perms3.apply(permissions=DelegatedPermission(perms3, 'parent'))
