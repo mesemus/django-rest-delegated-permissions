@@ -158,3 +158,19 @@ class DelegatedOwnerViewSet(viewsets.ModelViewSet):
     """
     queryset = ItemA.objects.all()
     serializer_class = ItemASerializer
+
+
+perms4 = RestPermissions(add_django_permissions=False,
+                         initial_permissions={
+                             Container: Condition.And(OwnerPermission(), DjangoCombinedPermission())
+                             # must be owner and have django permissions
+                         })
+
+
+@perms4.apply(permissions=DelegatedPermission(perms4, 'parent'))
+class DelegatedOwnerWithAndViewSet(viewsets.ModelViewSet):
+    """
+    This view set automatically provides `list` and `detail` actions.
+    """
+    queryset = ItemA.objects.all()
+    serializer_class = ItemASerializer

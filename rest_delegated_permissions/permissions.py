@@ -19,10 +19,18 @@ class BasePermission(permissions.BasePermission):
 
     @abstractmethod
     def has_object_permission(self, request, view, obj):
+        #
+        # should return True if request.user has permission for object "obj".
+        # the view is a "View" instance that is used for retrieving/modifying the object
+        #
         return False
 
     @abstractmethod
     def filter(self, rest_permissions, filtered_queryset, user, action):
+        #
+        # generator that yields one or more querysets. If it yields more than
+        # one queryset, they will be merged via "|" operator
+        #
         yield filtered_queryset.model.objects.none()
 
     def get_queryset_filters(self, rest_permissions, qs, user, action):
@@ -218,7 +226,7 @@ class RestPermissions:
         else:
             # django model permissions and object permissions are handled in model_filter() function
             # (faster for cases where user is assigned rights directly)
-            yield perm.get_queryset_filters(self, root_queryset, user, action)
+            yield from perm.get_queryset_filters(self, root_queryset, user, action)
 
     def permissions_for_model(self, model_class_or_model):
         if inspect.isclass(model_class_or_model):
@@ -278,7 +286,7 @@ class RestPermissions:
             qs = self.get_base_queryset(model_class)
 
             for partial_qs in self.filtered_model_queryset(model_class, qs, user, action):
-                querysets.extend(partial_qs)
+                querysets.append(partial_qs)
             querysets = [
                 x for x in querysets if not isinstance(x, EmptyQuerySet)
             ]
