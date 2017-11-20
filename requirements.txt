@@ -1,0 +1,4 @@
+Django>=1.10
+djangorestframework
+rest_condition
+django-guardian
