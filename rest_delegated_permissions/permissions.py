@@ -281,7 +281,7 @@ class RestPermissions:
                 self.set_model_permissions(model_class, permissions,
                                            force_add_django_permissions=add_django_permissions)
 
-            model_queryset_factory = self.create_queryset_factory(model_class)
+            model_queryset_factory = self.create_queryset_factory(model_class, getattr(viewset_class, 'queryset', None))
 
             return type('%s_perms' % viewset_class.__name__, (viewset_class, ), {
                 'permission_classes': (self.get_model_permissions(model_class),),
@@ -305,14 +305,17 @@ class RestPermissions:
 
         return _Permission
 
-    def create_queryset_factory(self, model_class):
+    def create_queryset_factory(self, model_class, base_queryset=None):
         """
         returns lambda (user, action) => queryset(model_class)
         """
 
         def model_filter(user, action):
             querysets = []
-            qs = self.get_base_queryset(model_class)
+            if base_queryset is not None:
+                qs = base_queryset
+            else:
+                qs = self.get_base_queryset(model_class)
 
             for partial_qs in self.filtered_model_queryset(model_class, qs, user, action):
                 querysets.append(partial_qs)
