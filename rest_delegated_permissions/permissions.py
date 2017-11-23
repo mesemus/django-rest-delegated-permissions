@@ -165,6 +165,7 @@ class DjangoCombinedPermission:
             'update': 'change',
             'change': 'change',
             'delete': 'delete',
+            'destroy': 'delete',
             'partial_update': 'change'
         }[action]
         ct = ContentType.objects.get_for_model(qs.model)
