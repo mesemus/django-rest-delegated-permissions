@@ -331,3 +331,8 @@ class RestPermissions:
 
     def get_base_queryset(self, model_class):
         return self.default_queryset_factory(model_class)
+
+    def has_object_permission(self, request, clazz, action, instance):
+        instance_permissions = self.permissions_for_model(instance)
+        instance_view = DelegatedPermission.DelegatedView(self, clazz, request, action)
+        return instance_permissions.has_object_permission(request, instance_view, instance)
