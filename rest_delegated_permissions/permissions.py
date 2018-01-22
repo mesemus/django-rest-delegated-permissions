@@ -159,15 +159,9 @@ class DjangoCombinedPermission:
                self.object_permissions.has_object_permission(request, view, obj)
 
     def get_queryset_filters(self, rest_permissions, qs, user, action):
-        operation = {
-            'retrieve': 'view',
-            'view': 'view',
-            'update': 'change',
-            'change': 'change',
-            'delete': 'delete',
-            'destroy': 'delete',
-            'partial_update': 'change'
-        }[action]
+        known_operations = {'retrieve': 'view', 'view': 'view', 'update': 'change', 'change': 'change', 'delete': 'delete',
+                   'destroy': 'delete', 'partial_update': 'change'}
+        operation = known_operations.get(action, action)
         ct = ContentType.objects.get_for_model(qs.model)
         perm = '%s_%s' % (operation, ct.model)
 
