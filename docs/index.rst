@@ -106,7 +106,6 @@ These steps are implemented inside the ``rest_delegated_permissions.RestPermissi
 .. code-block:: python
 
     perms = RestPermissions(
-        # this is in fact default setting
         add_django_permissions=True
     )
 
@@ -133,7 +132,7 @@ and ``get_permissions``. More explicitly, the code can be rewritten as:
 .. code-block:: python
 
     perms = RestPermissions(
-        add_django_permissions=False
+        add_django_permissions=True
     )
     # the permissions below are combined via OR operator
     perms.set_model_permissions(Address, [

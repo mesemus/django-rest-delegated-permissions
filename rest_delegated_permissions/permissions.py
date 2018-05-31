@@ -194,7 +194,7 @@ class DjangoCombinedPermission:
 class RestPermissions:
     def __init__(self, default_queryset_factory=lambda model: model.objects.all(),
                  initial_permissions=None,
-                 add_django_permissions=True):
+                 add_django_permissions=False):
         self.default_queryset_factory = default_queryset_factory
         self.add_django_permissions = add_django_permissions
         self.model_permission_map = {}

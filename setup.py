@@ -34,7 +34,7 @@ See docs and API at `github <https://github.com/mesemus/django-rest-delegated-pe
 
 setup(
     name='django-rest-delegated-permissions',
-    version='0.6.1',
+    version='1.0.0',
     packages=[
         'rest_delegated_permissions',
     ],
@@ -45,7 +45,7 @@ setup(
     url='https://github.com/mesemus/django-rest-delegated-permissions',
     license='MIT',
     install_requires=[
-        'Django>=1.10',
+        'Django>=1.11',
         'djangorestframework',
         'rest_condition',
         'django-guardian',
