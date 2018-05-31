@@ -86,21 +86,32 @@ class DelegatedPermission(permissions.BasePermission):
         def get_queryset(self):
             return self.rest_permissions.create_queryset_factory(self.model_class)(self.request.user, self.action)
 
-    def __init__(self, rest_permissions, *delegated_fields):
+    def __init__(self, rest_permissions, *delegated_fields, mapping=None):
         self.rest_permissions = rest_permissions
         self.delegated_fields = delegated_fields
+        self.mapping = mapping
 
     def has_object_permission(self, request, view, obj):
         for delegated_obj in DelegatedPermission.get_delegated_objects(obj, self.delegated_fields):
             if not delegated_obj:
                 continue
             delegated_permissions = self.rest_permissions.permissions_for_model(delegated_obj)
-            delegated_view = DelegatedPermission.DelegatedView(self.rest_permissions, type(delegated_obj), request, view.action)
+            delegated_action = self._get_delegated_action(view.action)
+            delegated_view = DelegatedPermission.DelegatedView(
+                self.rest_permissions, type(delegated_obj), request, delegated_action)
 
             if delegated_permissions.has_object_permission(request, delegated_view, delegated_obj):
                 return True
 
         return False
+
+    def _get_delegated_action(self, action):
+        if self.mapping:
+            if isinstance(self.mapping, str):
+                action = self.mapping
+            else:
+                action = self.mapping[action]
+        return action
 
     @staticmethod
     def get_delegated_objects(obj, field_names):
@@ -118,7 +129,8 @@ class DelegatedPermission(permissions.BasePermission):
         for delegated_field_name in self.delegated_fields:
             fld = qs.model._meta.get_field(delegated_field_name)
             related_model = fld.related_model
-            related_model_qs = rest_permissions.create_queryset_factory(related_model)(user, action)
+            related_model_qs = \
+                rest_permissions.create_queryset_factory(related_model)(user, self._get_delegated_action(action))
 
             filtered_qs = \
                 qs.annotate(__extra_condition=Exists(related_model_qs.filter(pk=OuterRef(delegated_field_name)))).filter(__extra_condition=True)
