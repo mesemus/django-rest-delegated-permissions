@@ -99,7 +99,8 @@ class DelegatedPermission(BasePermission):
 
         :param rest_permissions:
         :param delegated_fields:
-        :param mapping:
+        :param mapping: either a string (all actions will be mapped to this string), dict or
+                        callable taking a request and view and returning action name
         :param delegated_objects_getter:
         :param allowed_safe_actions:  If set, these actions will be granted initial access for the processing.
                                       Later filtering is then used for estimating if user has permissions.
@@ -119,7 +120,7 @@ class DelegatedPermission(BasePermission):
             if not delegated_obj:
                 continue
             delegated_permissions = self.rest_permissions.permissions_for_model(delegated_obj)
-            delegated_action = self._get_delegated_action(view.action)
+            delegated_action = self._get_delegated_action(request, view)
             delegated_view = DelegatedPermission.DelegatedView(
                 self.rest_permissions, type(delegated_obj), request, delegated_action)
 
@@ -132,8 +133,11 @@ class DelegatedPermission(BasePermission):
             return True
         return self._internal_has_permission(request, view, None)
 
-    def _get_delegated_action(self, action):
+    def _get_delegated_action(self, request, view):
+        action = view.action
         if self.mapping:
+            if callable(self.mapping):
+                return self.mapping(request, view)
             if isinstance(self.mapping, str):
                 action = self.mapping
             else:
