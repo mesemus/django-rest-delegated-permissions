@@ -78,7 +78,7 @@ class BasePermission(permissions.BasePermission):
                 yield qs.annotate(__extra_condition=ExpressionWrapper(Value(True), output_field=BooleanField()))
 
 
-class DelegatedPermission(permissions.BasePermission):
+class DelegatedPermission(BasePermission):
     """
 
     """
