@@ -100,6 +100,9 @@ class DelegatedPermission(BasePermission):
         self.delegated_objects_getter = delegated_objects_getter
 
     def has_object_permission(self, request, view, obj):
+        return self._internal_has_permission(request, view, obj)
+
+    def _internal_has_permission(self, request, view, obj):
         getter = self.delegated_objects_getter or DelegatedPermission.get_delegated_objects
         for delegated_obj in getter(request, view, obj, self.delegated_fields):
             if not delegated_obj:
@@ -111,11 +114,10 @@ class DelegatedPermission(BasePermission):
 
             if delegated_permissions.has_object_permission(request, delegated_view, delegated_obj):
                 return True
-
         return False
 
     def has_permission(self, request, view):
-        return self.has_object_permission(request, view, None)
+        return self._internal_has_permission(request, view, None)
 
     def _get_delegated_action(self, action):
         if self.mapping:
