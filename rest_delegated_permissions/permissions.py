@@ -94,7 +94,7 @@ class DelegatedPermission(BasePermission):
             return self.rest_permissions.create_queryset_factory(self.model_class)(self.request.user, self.action)
 
     def __init__(self, rest_permissions, *delegated_fields, mapping=None, delegated_objects_getter=None,
-                 allowed_safe_actions=()):
+                 allowed_safe_actions=('get', 'list')):
         """
 
         :param rest_permissions:
