@@ -93,11 +93,22 @@ class DelegatedPermission(BasePermission):
         def get_queryset(self):
             return self.rest_permissions.create_queryset_factory(self.model_class)(self.request.user, self.action)
 
-    def __init__(self, rest_permissions, *delegated_fields, mapping=None, delegated_objects_getter=None):
+    def __init__(self, rest_permissions, *delegated_fields, mapping=None, delegated_objects_getter=None,
+                 allowed_safe_actions=()):
+        """
+
+        :param rest_permissions:
+        :param delegated_fields:
+        :param mapping:
+        :param delegated_objects_getter:
+        :param allowed_safe_actions:  If set, these actions will be granted initial access for the processing.
+                                      Later filtering is then used for estimating if user has permissions.
+        """
         self.rest_permissions = rest_permissions
         self.delegated_fields = delegated_fields
         self.mapping = mapping
         self.delegated_objects_getter = delegated_objects_getter
+        self.allowed_safe_actions = allowed_safe_actions
 
     def has_object_permission(self, request, view, obj):
         return self._internal_has_permission(request, view, obj)
@@ -117,6 +128,8 @@ class DelegatedPermission(BasePermission):
         return False
 
     def has_permission(self, request, view):
+        if view.action in self.allowed_safe_actions:
+            return True
         return self._internal_has_permission(request, view, None)
 
     def _get_delegated_action(self, action):
