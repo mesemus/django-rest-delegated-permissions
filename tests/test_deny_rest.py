@@ -11,4 +11,4 @@ from tests.test_users_base import BaseUsers
 class TestDenyRest(BaseTestDenyAllItems, BaseTestItemRest, BaseUsers):
 
     def transform_expected_result_code(self, *args):
-        return 404
+        return 403

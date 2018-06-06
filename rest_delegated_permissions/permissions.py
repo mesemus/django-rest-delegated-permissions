@@ -166,7 +166,9 @@ class DelegatedPermission(BasePermission):
                 rest_permissions.create_queryset_factory(related_model)(user, self._get_delegated_action(action))
 
             filtered_qs = \
-                qs.annotate(__extra_condition=Exists(related_model_qs.filter(pk=OuterRef(delegated_field_name)))).filter(__extra_condition=True)
+                qs.annotate(
+                    __extra_condition=Exists(related_model_qs.filter(pk=OuterRef(delegated_field_name)))).filter(
+                    __extra_condition=True)
             yield filtered_qs
 
 
@@ -179,7 +181,9 @@ def kwargs_delegated_object_getter(field_name_to_kwarg_name_map,
             related_model_class = model._meta.get_field(field_name).related_model
             yield instantiator(related_model_class, kwarg_value, field_name)
         pass
+
     return kwargs_delegated_object_getter_func
+
 
 class RestrictedViewDjangoModelPermissions(permissions.DjangoModelPermissions):
     perms_map = {}
@@ -207,7 +211,7 @@ class RestrictedViewDjangoObjectPermissions(permissions.DjangoObjectPermissions)
 class DjangoCombinedPermission:
 
     def __init__(self):
-        self.model_permissions  = RestrictedViewDjangoModelPermissions()
+        self.model_permissions = RestrictedViewDjangoModelPermissions()
         self.object_permissions = RestrictedViewDjangoObjectPermissions()
 
     def has_object_permission(self, request, view, obj):
@@ -215,8 +219,9 @@ class DjangoCombinedPermission:
                self.object_permissions.has_object_permission(request, view, obj)
 
     def get_queryset_filters(self, rest_permissions, qs, user, action):
-        known_operations = {'retrieve': 'view', 'view': 'view', 'update': 'change', 'change': 'change', 'delete': 'delete',
-                   'destroy': 'delete', 'partial_update': 'change'}
+        known_operations = {'retrieve': 'view', 'view': 'view', 'update': 'change', 'change': 'change',
+                            'delete': 'delete',
+                            'destroy': 'delete', 'partial_update': 'change'}
         operation = known_operations.get(action, action)
         ct = ContentType.objects.get_for_model(qs.model)
         perm = '%s_%s' % (operation, ct.model)
@@ -229,6 +234,10 @@ class DjangoCombinedPermission:
                 guardian_qs = get_objects_for_user(user, [perm], qs) \
                     .annotate(__extra_condition=ExpressionWrapper(Value(True), output_field=BooleanField()))
                 yield guardian_qs
+
+    def has_permission(self, request, view):
+        # let it pass, filter() method will handle rest apart of "create" which has to be dealt with in the code
+        return True
 
     @staticmethod
     def check_permission_exists(ct, perm_name):
@@ -332,11 +341,13 @@ class RestPermissions:
                 self.set_model_permissions(model_class, permissions,
                                            force_add_django_permissions=add_django_permissions)
 
-            model_queryset_factory = self.create_queryset_factory(model_class, getattr(viewset_class, 'queryset', None))
+            model_queryset_factory = self.create_queryset_factory(model_class,
+                                                                  getattr(viewset_class, 'get_queryset', None))
 
-            return type('%s_perms' % viewset_class.__name__, (viewset_class, ), {
+            return type('%s_perms' % viewset_class.__name__, (viewset_class,), {
                 'permission_classes': (self.get_model_permissions(model_class),),
-                'get_queryset': lambda view_set: model_queryset_factory(view_set.request.user, 'view')
+                'get_queryset': lambda view_set: model_queryset_factory(
+                    view_set.request.user, 'view', view_set=view_set)
             })
 
         return decorate
@@ -353,15 +364,16 @@ class RestPermissions:
 
         return _Permission
 
-    def create_queryset_factory(self, model_class, base_queryset=None):
+    def create_queryset_factory(self, model_class, base_queryset_getter=None):
         """
         returns lambda (user, action) => queryset(model_class)
         """
 
-        def model_filter(user, action):
+        def model_filter(user, action, view_set=None):
             querysets = []
-            if base_queryset is not None:
-                qs = base_queryset
+
+            if base_queryset_getter is not None and view_set is not None:
+                qs = base_queryset_getter(view_set)
             else:
                 qs = self.get_base_queryset(model_class)
 

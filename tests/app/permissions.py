@@ -17,3 +17,8 @@ class OwnerPermission(BasePermission):
         :return:
         """
         yield filtered_queryset.filter(owner=user)
+
+    def has_permission(self, request, view):
+        # filter will limit it
+        return True
+

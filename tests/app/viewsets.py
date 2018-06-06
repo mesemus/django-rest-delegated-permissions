@@ -9,7 +9,7 @@ from .models import Container, ItemA, ItemB, ItemC, ItemD, ItemE
 
 # without parameters implicitly adds django model permissions (app_name.view_model, app_name.change_model)
 # and support for django-guardian
-perms = RestPermissions()
+perms = RestPermissions(add_django_permissions=True)
 
 #
 # can set the permission either here or on a perms.apply() call - see itemB, C, D.
@@ -174,3 +174,4 @@ class DelegatedOwnerWithAndViewSet(viewsets.ModelViewSet):
     """
     queryset = ItemA.objects.all()
     serializer_class = ItemASerializer
+

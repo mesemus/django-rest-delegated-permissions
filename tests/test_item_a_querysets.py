@@ -1,4 +1,7 @@
 # noinspection PyPackageRequirements
+import os
+
+print(os.environ)
 
 import pytest
 
